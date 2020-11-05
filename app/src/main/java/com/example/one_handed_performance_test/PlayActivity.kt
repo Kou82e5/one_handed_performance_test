@@ -143,6 +143,7 @@ class PlayActivity : AppCompatActivity(),SensorEventListener {
                     println("三Ts时间为" + Ts)
                     Log.d("手指", "onTouchEvent: ts成功开始")        //如果是记录碰到手机而不是准确落在点上时，这段就可以留下，不然就可以删了
                     changeableLayout.layoutRefresh()
+                    changeableLayout.taskCompleted(2)
                     changeableLayout.iNit()
                     flag=-1
 

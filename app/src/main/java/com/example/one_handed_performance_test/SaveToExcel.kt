@@ -80,7 +80,7 @@ class SaveToExcel(excelId: String) {
         wwb.close()
     }
 
-    private fun save(data: ExperimentData) {
+    fun save(data: ExperimentData) {
         if (data == null)
             return;
         else try {
