@@ -4,32 +4,42 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Resources
 import android.media.MediaPlayer
+import android.os.Environment
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.Toast
+import com.example.one_handed_performance_test.MainActivity.Companion.select
 import com.example.one_handed_performance_test.PlayActivity.Companion.Ti
 import com.example.one_handed_performance_test.PlayActivity.Companion.To
 import com.example.one_handed_performance_test.PlayActivity.Companion.Ts
 import com.example.one_handed_performance_test.PlayActivity.Companion.flag
 import com.example.one_handed_performance_test.PlayActivity.Companion.lockdown
+import com.example.one_handed_performance_test.PlayActivity.Companion.timestamp
 import com.example.one_handed_performance_test.PlayActivity.Companion.tmpt
 import kotlinx.android.synthetic.main.button_array.view.*
-import org.apache.log4j.chainsaw.Main
+import java.io.File
 import java.util.*
-import java.util.Collections.shuffle
+import java.util.concurrent.LinkedBlockingDeque
 
 class ChangeableLayout(context: Context, attrs: AttributeSet): RelativeLayout(context, attrs) {
     private val errorAudioPlayer = MediaPlayer()//播放音频对象
     private val rightAudioPlayer = MediaPlayer()
     private var buttonList: List<Button>//按钮列表
+
+    //向excel存数据使用到的变量
+    private lateinit var dataList: LinkedBlockingDeque<ExperimentData>
+    private lateinit var subjectInfo: String
+    private lateinit var saveToExcel: SaveToExcel
+    private lateinit var runnable: SaveDataRunnable
+
     init {
         LayoutInflater.from(context).inflate(R.layout.changeable_layout, this)
         initMediaPlayer()
+        initSaveDataMethod()
         buttonList = listOf(button_0, button_1, button_2, button_3, button_4)
         setButtonListener()
     }
@@ -46,11 +56,10 @@ class ChangeableLayout(context: Context, attrs: AttributeSet): RelativeLayout(co
     private fun setEachButtonListener(bt: Button) {
         if (bt == button_2) {
             bt.setOnClickListener {
-                if (Ti != 0L && Ts == 0L) {
-                    Ts = System.currentTimeMillis() - tmpt
+                if (Ti[select] != 0L ) {
+                    Ts[select] = System.currentTimeMillis() - tmpt
                     println("三Ts时间为" + Ts)
                     Log.d("手指", "subPlayChanged: ts成功开始")
-                    lockdown = 0
                 }
                 bt.setBackgroundResource(R.drawable.shape_circle_green)
                 rightAudioPlayer.start()
@@ -80,13 +89,19 @@ class ChangeableLayout(context: Context, attrs: AttributeSet): RelativeLayout(co
                 MainActivity.zcOpr = MainActivity.ZC[MainActivity.zc]
                 MainActivity.cmOpr = MainActivity.CM[MainActivity.cm]
                 layoutRefresh()
+                taskCompleted(0)
+                iNit()
             }
         }
         else {
             bt.setOnClickListener {
                 bt.setBackgroundResource(R.drawable.shape_circle_red)
                 errorAudioPlayer.start()
+<<<<<<< Updated upstream
                 layoutRefresh()
+=======
+                taskCompleted(1)
+>>>>>>> Stashed changes
             }
         }
     }
@@ -168,42 +183,93 @@ class ChangeableLayout(context: Context, attrs: AttributeSet): RelativeLayout(co
         rightAudioPlayer.stop()
         rightAudioPlayer.release()
     }
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        when(event?.actionMasked){
-            MotionEvent.ACTION_DOWN -> {
-                if (Ti != 0L && Ts == 0L) {
-                    Ts = System.currentTimeMillis() - tmpt
-                    println("三Ts时间为" + Ts)
-                    Log.d("手指", "onTouchEvent: ts成功开始")
-                    lockdown = 0
-                }
-                Log.d("手指", "onTouchEvent: 落下但Ts未开始")
-                tmpt = System.currentTimeMillis()
-                flag = 0
-                lockdown = 1
-
-
-            }
-            MotionEvent.ACTION_MOVE->{
-                flag =0
-            }
-            MotionEvent.ACTION_UP->{
-                if(To !=0L&& Ts ==0L){
-                    Ti =System.currentTimeMillis()- tmpt
-                    println("二Ti时间为"+ Ti)
-                    flag =1
-                    println("finger up")
-                }
-                if(Ti ==0L) {
-                    To = System.currentTimeMillis() - tmpt
-                    tmpt = System.currentTimeMillis()
-                    println("一To时间为" + To)
-                    flag =1
-                }
-
-            }
+    fun iNit(){
+        for(i in 0..15){
+            Ti[i] = 0L
+            Ts[i] = 0L
+            To[i] = 0L
         }
-        return super.onTouchEvent(event)
+        for(i in 0..2){
+            timestamp[i]=0F
+        }
+        tmpt = 0L
+
+        flag = 0
+        lockdown = 0
     }
 
+    fun initSaveDataMethod() {
+        dataList = LinkedBlockingDeque()
+        val excelPath = getExcelDir() + File.separator + "User_" + subjectInfo + "_" + 0 + ".xls"
+        saveToExcel = SaveToExcel(excelPath)
+        runnable = SaveDataRunnable(saveToExcel, dataList)
+        Thread(runnable).start()
+    }
+    fun getExcelDir(): String {
+        //SD卡指定文件夹
+        val sdcardPath = Environment.getExternalStorageState().toString()
+        val dir = File(sdcardPath + File.separator + "OneHand-Excel" + File.separator + "User_" + subjectInfo)
+        if (dir.exists()) {
+            return dir.toString()
+        } else {
+            dir.mkdirs();
+            return dir.toString()
+        }
+    }
+
+    fun taskCompleted(correct: Int) {
+        when(correct) {
+            0 ->  //添加一条记录到List
+                try {
+                dataList.put(
+                    ExperimentData("1",
+                        0,
+                        MainActivity.to as Double,
+                        MainActivity.zc.toDouble(),
+                        MainActivity.cm as Double,
+                        To[select].toDouble(),
+                        Ti[select].toDouble(),
+                        Ts[select].toDouble(),
+                        0.0
+                    )
+                )
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+            }
+            1 -> //添加一条记录到List
+                try {
+                    dataList.put(
+                        ExperimentData("1",
+                            0,
+                            MainActivity.to as Double,
+                            MainActivity.zc.toDouble(),
+                            MainActivity.cm as Double,
+                            (-1).toDouble(),
+                            (-1).toDouble(),
+                            (-1).toDouble(),
+                            1.0
+                        )
+                    )
+                } catch (e: InterruptedException) {
+                    e.printStackTrace()
+                }
+            2 ->
+                try {
+                    dataList.put(
+                        ExperimentData("1",
+                        0,
+                        MainActivity.to as Double,
+                        MainActivity.zc.toDouble(),
+                            MainActivity.cm as Double,
+                            (-1).toDouble(),
+                            (-1).toDouble(),
+                            (-1).toDouble(),
+                            2.0
+                        )
+                    )
+                } catch (e: InterruptedException) {
+                    e.printStackTrace()
+                }
+        }
+    }
 }
