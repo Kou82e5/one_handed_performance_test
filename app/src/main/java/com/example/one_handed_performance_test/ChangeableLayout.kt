@@ -8,7 +8,6 @@ import android.os.Environment
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
@@ -25,7 +24,9 @@ import kotlinx.android.synthetic.main.activity_play.*
 import kotlinx.android.synthetic.main.button_array.view.*
 import java.io.File
 import java.util.*
+
 import java.util.Collections.shuffle
+
 import java.util.concurrent.LinkedBlockingDeque
 
 class ChangeableLayout(context: Context, attrs: AttributeSet): RelativeLayout(context, attrs) {
@@ -100,6 +101,11 @@ class ChangeableLayout(context: Context, attrs: AttributeSet): RelativeLayout(co
             bt.setOnClickListener {
                 bt.setBackgroundResource(R.drawable.shape_circle_red)
                 errorAudioPlayer.start()
+				
+                layoutRefresh()
+
+                taskCompleted(1)
+
             }
             layoutRefresh()
             taskCompleted(1)
@@ -223,16 +229,33 @@ class ChangeableLayout(context: Context, attrs: AttributeSet): RelativeLayout(co
         when(correct) {
             0 ->  //添加一条记录到List
                 try {
+                dataList.put(
+                    ExperimentData("1",
+                        0,
+                        MainActivity.to as Double,
+                        MainActivity.zc.toDouble(),
+                        MainActivity.cm as Double,
+                        To[select].toDouble(),
+                        Ti[select].toDouble(),
+                        Ts[select].toDouble(),
+                        0.0
+                    )
+                )
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+            }
+            1 -> //添加一条记录到List
+                try {
                     dataList.put(
                         ExperimentData("1",
                             0,
                             MainActivity.to as Double,
                             MainActivity.zc.toDouble(),
                             MainActivity.cm as Double,
-                            To[select].toDouble(),
-                            Ti[select].toDouble(),
-                            Ts[select].toDouble(),
-                            0.0
+                            (-1).toDouble(),
+                            (-1).toDouble(),
+                            (-1).toDouble(),
+                            1.0
                         )
                     )
                 } catch (e: InterruptedException) {
@@ -259,9 +282,9 @@ class ChangeableLayout(context: Context, attrs: AttributeSet): RelativeLayout(co
                 try {
                     dataList.put(
                         ExperimentData("1",
-                            0,
-                            MainActivity.to as Double,
-                            MainActivity.zc.toDouble(),
+                        0,
+                        MainActivity.to as Double,
+                        MainActivity.zc.toDouble(),
                             MainActivity.cm as Double,
                             (-1).toDouble(),
                             (-1).toDouble(),
@@ -274,5 +297,4 @@ class ChangeableLayout(context: Context, attrs: AttributeSet): RelativeLayout(co
                 }
         }
     }
-
 }

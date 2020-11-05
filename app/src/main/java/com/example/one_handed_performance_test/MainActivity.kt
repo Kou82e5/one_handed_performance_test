@@ -40,7 +40,9 @@ class MainActivity : AppCompatActivity(){
         val zcName = arrayOf("触点","触点上","触点下","触点外","中心点")
         val cmName = arrayOf("绝对映射","速率映射")
 
+
         var leftORrightHand = 1
+
 
     }
 
